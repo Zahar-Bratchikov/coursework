@@ -75,13 +75,15 @@
     #include <string.h>
     #include <ctype.h>
     
+    extern FILE *yyin;
+
     void yyerror(const char *s);
     int yylex(void);
     expression *final_expression = NULL;
 
     void print_final_expression();
 
-#line 85 "alfa_parser.tab.c"
+#line 87 "alfa_parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -519,8 +521,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    31,    31,    32,    36,    40,    41,    42,    46,    47,
-      48,    52,    57,    58,    59,    60,    61,    62,    63,    67
+       0,    33,    33,    34,    38,    42,    43,    44,    48,    49,
+      50,    54,    59,    60,    61,    62,    63,    64,    65,    69
 };
 #endif
 
@@ -1100,89 +1102,89 @@ yyreduce:
   switch (yyn)
     {
   case 4: /* line: expression EOL  */
-#line 36 "alfa_parser.y"
+#line 38 "alfa_parser.y"
                      { final_expression = (yyvsp[-1].expr); print_final_expression(); }
-#line 1106 "alfa_parser.tab.c"
+#line 1108 "alfa_parser.tab.c"
     break;
 
   case 6: /* expression: expression PLUS term  */
-#line 41 "alfa_parser.y"
+#line 43 "alfa_parser.y"
                            { (yyval.expr) = differentiate_sum((yyvsp[-2].expr), (yyvsp[0].expr), 0); }
-#line 1112 "alfa_parser.tab.c"
+#line 1114 "alfa_parser.tab.c"
     break;
 
   case 7: /* expression: expression MINUS term  */
-#line 42 "alfa_parser.y"
+#line 44 "alfa_parser.y"
                             { (yyval.expr) = differentiate_sum((yyvsp[-2].expr), (yyvsp[0].expr), 1); }
-#line 1118 "alfa_parser.tab.c"
+#line 1120 "alfa_parser.tab.c"
     break;
 
   case 9: /* term: term MULT factor  */
-#line 47 "alfa_parser.y"
+#line 49 "alfa_parser.y"
                        { (yyval.expr) = differentiate_product((yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1124 "alfa_parser.tab.c"
+#line 1126 "alfa_parser.tab.c"
     break;
 
   case 10: /* term: term DIV factor  */
-#line 48 "alfa_parser.y"
+#line 50 "alfa_parser.y"
                       { (yyval.expr) = differentiate_quotient((yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1130 "alfa_parser.tab.c"
+#line 1132 "alfa_parser.tab.c"
     break;
 
   case 11: /* factor: NUMBER  */
-#line 52 "alfa_parser.y"
+#line 54 "alfa_parser.y"
              { 
         char num_str[64];
         snprintf(num_str, sizeof(num_str), "%g", (yyvsp[0].num));  // Используем $1 как double
         (yyval.expr) = new_expression(num_str, "0");
     }
-#line 1140 "alfa_parser.tab.c"
+#line 1142 "alfa_parser.tab.c"
     break;
 
   case 12: /* factor: VARIABLE  */
-#line 57 "alfa_parser.y"
+#line 59 "alfa_parser.y"
                { (yyval.expr) = new_expression("x", "1"); }
-#line 1146 "alfa_parser.tab.c"
+#line 1148 "alfa_parser.tab.c"
     break;
 
   case 13: /* factor: SIN '(' expression ')'  */
-#line 58 "alfa_parser.y"
+#line 60 "alfa_parser.y"
                              { (yyval.expr) = apply_chain_rule(new_expression("sin", "cos"), (yyvsp[-1].expr)); }
-#line 1152 "alfa_parser.tab.c"
+#line 1154 "alfa_parser.tab.c"
     break;
 
   case 14: /* factor: COS '(' expression ')'  */
-#line 59 "alfa_parser.y"
+#line 61 "alfa_parser.y"
                              { (yyval.expr) = apply_chain_rule(new_expression("cos", "-sin"), (yyvsp[-1].expr)); }
-#line 1158 "alfa_parser.tab.c"
+#line 1160 "alfa_parser.tab.c"
     break;
 
   case 15: /* factor: EXP '(' expression ')'  */
-#line 60 "alfa_parser.y"
+#line 62 "alfa_parser.y"
                              { (yyval.expr) = apply_chain_rule(new_expression("exp", "exp"), (yyvsp[-1].expr)); }
-#line 1164 "alfa_parser.tab.c"
+#line 1166 "alfa_parser.tab.c"
     break;
 
   case 16: /* factor: LN '(' expression ')'  */
-#line 61 "alfa_parser.y"
+#line 63 "alfa_parser.y"
                             { (yyval.expr) = apply_chain_rule(new_expression("ln", "1/x"), (yyvsp[-1].expr)); }
-#line 1170 "alfa_parser.tab.c"
+#line 1172 "alfa_parser.tab.c"
     break;
 
   case 17: /* factor: factor POW exponent  */
-#line 62 "alfa_parser.y"
+#line 64 "alfa_parser.y"
                           { (yyval.expr) = differentiate_power((yyvsp[-2].expr), (yyvsp[0].expr)); }
-#line 1176 "alfa_parser.tab.c"
+#line 1178 "alfa_parser.tab.c"
     break;
 
   case 18: /* factor: '(' expression ')'  */
-#line 63 "alfa_parser.y"
+#line 65 "alfa_parser.y"
                          { (yyval.expr) = copy_expression((yyvsp[-1].expr)); }
-#line 1182 "alfa_parser.tab.c"
+#line 1184 "alfa_parser.tab.c"
     break;
 
 
-#line 1186 "alfa_parser.tab.c"
+#line 1188 "alfa_parser.tab.c"
 
       default: break;
     }
@@ -1375,16 +1377,12 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 70 "alfa_parser.y"
+#line 72 "alfa_parser.y"
 
 
 expression *copy_expression(const expression *expr) {
     return new_expression(expr->function, expr->derivative);
 }
-
-#include <ctype.h>  // Добавить в начало файла парсера
-
-#include <ctype.h>  // Включить в начало файла парсера
 
 expression *new_expression(const char *func, const char *deriv) {
     expression *expr = (expression *)malloc(sizeof(expression));
@@ -1401,16 +1399,20 @@ expression *new_expression(const char *func, const char *deriv) {
     return expr;
 }
 
-
-
-
 expression *differentiate_sum(const expression *f, const expression *g, int is_minus) {
     char *op = is_minus ? "-" : "+";
     char *function = (char *)malloc(strlen(f->function) + strlen(g->function) + 4);
     sprintf(function, "(%s %s %s)", f->function, op, g->function);
 
-    char *derivative = (char *)malloc(strlen(f->derivative) + strlen(g->derivative) + 4);
-    sprintf(derivative, "(%s %s %s)", f->derivative, op, g->derivative);
+    char *derivative;
+    if (strcmp(f->derivative, "0") == 0) {
+        derivative = strdup(g->derivative);
+    } else if (strcmp(g->derivative, "0") == 0) {
+        derivative = strdup(f->derivative);
+    } else {
+        derivative = (char *)malloc(strlen(f->derivative) + strlen(g->derivative) + 4);
+        sprintf(derivative, "(%s %s %s)", f->derivative, op, g->derivative);
+    }
 
     return new_expression(function, derivative);
 }
@@ -1420,7 +1422,7 @@ expression *differentiate_product(const expression *f, const expression *g) {
     sprintf(function, "(%s * %s)", f->function, g->function);
 
     char *derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 20);
-    sprintf(derivative, "((%s) * (%s) + (%s) * (%s))", f->derivative, g->function, f->function, g->derivative);
+    sprintf(derivative, "((%s * %s) + (%s * %s))", f->derivative, g->function, f->function, g->derivative);
 
     return new_expression(function, derivative);
 }
@@ -1429,8 +1431,15 @@ expression *differentiate_quotient(const expression *f, const expression *g) {
     char *function = (char *)malloc(strlen(f->function) + strlen(g->function) + 5);
     sprintf(function, "(%s / %s)", f->function, g->function);
 
-    char *derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 32);
-    sprintf(derivative, "((%s) * (%s) - (%s) * (%s)) / pow(%s, 2)", f->derivative, g->function, f->function, g->derivative, g->function);
+    char *derivative;
+    if (strcmp(f->derivative, "0") == 0) {
+        derivative = strdup("0");
+    } else if (strcmp(g->derivative, "0") == 0) {
+        derivative = strdup(f->derivative);
+    } else {
+        derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 32);
+        sprintf(derivative, "((%s * %s) - (%s * %s)) / pow(%s, 2)", f->derivative, g->function, f->function, g->derivative, g->function);
+    }
 
     return new_expression(function, derivative);
 }
@@ -1439,8 +1448,13 @@ expression *differentiate_power(const expression *base, const expression *expone
     char *function = (char *)malloc(strlen(base->function) + strlen(exponent->function) + 10);
     sprintf(function, "pow(%s, %s)", base->function, exponent->function);
 
-    char *derivative = (char *)malloc(strlen(base->function) + strlen(base->derivative) + strlen(exponent->function) + strlen(exponent->derivative) + 64);
-    sprintf(derivative, "pow(%s, %s - 1) * (%s * %s + ln(%s) * %s * %s)", base->function, exponent->function, exponent->function, base->derivative, base->function, exponent->derivative, base->function);
+    char *derivative;
+    if (strcmp(base->derivative, "0") == 0) {
+        derivative = strdup("0");
+    } else {
+        derivative = (char *)malloc(strlen(base->function) + strlen(base->derivative) + strlen(exponent->function) + strlen(exponent->derivative) + 64);
+        sprintf(derivative, "pow(%s, %s - 1) * (%s * %s + ln(%s) * %s * %s)", base->function, exponent->function, exponent->function, base->derivative, base->function, exponent->derivative, base->function);
+    }
 
     return new_expression(function, derivative);
 }
@@ -1449,11 +1463,20 @@ expression *apply_chain_rule(const expression *outer, const expression *inner) {
     char *function = (char *)malloc(strlen(outer->function) + strlen(inner->function) + 3);
     sprintf(function, "%s(%s)", outer->function, inner->function);
 
-    char *derivative = (char *)malloc(strlen(outer->derivative) + strlen(inner->function) + strlen(inner->derivative) + 20);
-    sprintf(derivative, "(%s(%s))*(%s)", outer->derivative, inner->function, inner->derivative);
+    char *derivative;
+    if (strcmp(outer->function, "ln") == 0) {
+        // Для ln(x), производная будет 1/внутреннее_выражение
+        derivative = (char *)malloc(strlen(inner->function) + 6);
+        sprintf(derivative, "1/(%s)", inner->function);
+    } else {
+        // Для других функций, используем обычное правило произведения
+        derivative = (char *)malloc(strlen(outer->derivative) + strlen(inner->function) + strlen(inner->derivative) + 10);
+        sprintf(derivative, "(%s(%s) * %s)", outer->derivative, inner->function, inner->derivative);
+    }
 
     return new_expression(function, derivative);
 }
+
 
 void delete_expression(expression *expr) {
     free(expr->function);
@@ -1473,7 +1496,24 @@ void yyerror(const char *s) {
         fprintf(stderr, "Error: %s\n", s);
 }
 
-int main(void) {
-    yyparse();
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        // Если аргумент командной строки предоставлен, открываем файл
+        FILE *file = fopen(argv[1], "r");
+        if (!file) {
+            perror(argv[1]); // Выводим ошибку, если файл не может быть открыт
+            return 1;
+        }
+        yyin = file; // Устанавливаем yyin на файл для считывания
+    } else {
+        yyin = stdin; // В противном случае считываем из стандартного ввода
+    }
+
+    yyparse(); // Вызываем парсер
+
+    if (argc > 1) {
+        fclose(yyin); // Закрываем файл, если он был открыт
+    }
+
     return 0;
 }

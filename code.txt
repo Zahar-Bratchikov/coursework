@@ -1,0 +1,4 @@
+cos(sin(x)) + exp(x)
+sin(x) * cos(x)
+ln(x)
+x^2

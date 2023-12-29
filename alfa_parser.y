@@ -5,6 +5,8 @@
     #include <string.h>
     #include <ctype.h>
     
+    extern FILE *yyin;
+
     void yyerror(const char *s);
     int yylex(void);
     expression *final_expression = NULL;
@@ -73,10 +75,6 @@ expression *copy_expression(const expression *expr) {
     return new_expression(expr->function, expr->derivative);
 }
 
-#include <ctype.h>  // Добавить в начало файла парсера
-
-#include <ctype.h>  // Включить в начало файла парсера
-
 expression *new_expression(const char *func, const char *deriv) {
     expression *expr = (expression *)malloc(sizeof(expression));
 
@@ -92,16 +90,20 @@ expression *new_expression(const char *func, const char *deriv) {
     return expr;
 }
 
-
-
-
 expression *differentiate_sum(const expression *f, const expression *g, int is_minus) {
     char *op = is_minus ? "-" : "+";
     char *function = (char *)malloc(strlen(f->function) + strlen(g->function) + 4);
     sprintf(function, "(%s %s %s)", f->function, op, g->function);
 
-    char *derivative = (char *)malloc(strlen(f->derivative) + strlen(g->derivative) + 4);
-    sprintf(derivative, "(%s %s %s)", f->derivative, op, g->derivative);
+    char *derivative;
+    if (strcmp(f->derivative, "0") == 0) {
+        derivative = strdup(g->derivative);
+    } else if (strcmp(g->derivative, "0") == 0) {
+        derivative = strdup(f->derivative);
+    } else {
+        derivative = (char *)malloc(strlen(f->derivative) + strlen(g->derivative) + 4);
+        sprintf(derivative, "(%s %s %s)", f->derivative, op, g->derivative);
+    }
 
     return new_expression(function, derivative);
 }
@@ -111,7 +113,7 @@ expression *differentiate_product(const expression *f, const expression *g) {
     sprintf(function, "(%s * %s)", f->function, g->function);
 
     char *derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 20);
-    sprintf(derivative, "((%s) * (%s) + (%s) * (%s))", f->derivative, g->function, f->function, g->derivative);
+    sprintf(derivative, "((%s * %s) + (%s * %s))", f->derivative, g->function, f->function, g->derivative);
 
     return new_expression(function, derivative);
 }
@@ -120,8 +122,15 @@ expression *differentiate_quotient(const expression *f, const expression *g) {
     char *function = (char *)malloc(strlen(f->function) + strlen(g->function) + 5);
     sprintf(function, "(%s / %s)", f->function, g->function);
 
-    char *derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 32);
-    sprintf(derivative, "((%s) * (%s) - (%s) * (%s)) / pow(%s, 2)", f->derivative, g->function, f->function, g->derivative, g->function);
+    char *derivative;
+    if (strcmp(f->derivative, "0") == 0) {
+        derivative = strdup("0");
+    } else if (strcmp(g->derivative, "0") == 0) {
+        derivative = strdup(f->derivative);
+    } else {
+        derivative = (char *)malloc(strlen(f->function) + strlen(f->derivative) + strlen(g->function) + strlen(g->derivative) + 32);
+        sprintf(derivative, "((%s * %s) - (%s * %s)) / pow(%s, 2)", f->derivative, g->function, f->function, g->derivative, g->function);
+    }
 
     return new_expression(function, derivative);
 }
@@ -130,8 +139,13 @@ expression *differentiate_power(const expression *base, const expression *expone
     char *function = (char *)malloc(strlen(base->function) + strlen(exponent->function) + 10);
     sprintf(function, "pow(%s, %s)", base->function, exponent->function);
 
-    char *derivative = (char *)malloc(strlen(base->function) + strlen(base->derivative) + strlen(exponent->function) + strlen(exponent->derivative) + 64);
-    sprintf(derivative, "pow(%s, %s - 1) * (%s * %s + ln(%s) * %s * %s)", base->function, exponent->function, exponent->function, base->derivative, base->function, exponent->derivative, base->function);
+    char *derivative;
+    if (strcmp(base->derivative, "0") == 0) {
+        derivative = strdup("0");
+    } else {
+        derivative = (char *)malloc(strlen(base->function) + strlen(base->derivative) + strlen(exponent->function) + strlen(exponent->derivative) + 64);
+        sprintf(derivative, "pow(%s, %s - 1) * (%s * %s + ln(%s) * %s * %s)", base->function, exponent->function, exponent->function, base->derivative, base->function, exponent->derivative, base->function);
+    }
 
     return new_expression(function, derivative);
 }
@@ -140,11 +154,20 @@ expression *apply_chain_rule(const expression *outer, const expression *inner) {
     char *function = (char *)malloc(strlen(outer->function) + strlen(inner->function) + 3);
     sprintf(function, "%s(%s)", outer->function, inner->function);
 
-    char *derivative = (char *)malloc(strlen(outer->derivative) + strlen(inner->function) + strlen(inner->derivative) + 20);
-    sprintf(derivative, "(%s(%s))*(%s)", outer->derivative, inner->function, inner->derivative);
+    char *derivative;
+    if (strcmp(outer->function, "ln") == 0) {
+        // Для ln(x), производная будет 1/внутреннее_выражение
+        derivative = (char *)malloc(strlen(inner->function) + 6);
+        sprintf(derivative, "1/(%s)", inner->function);
+    } else {
+        // Для других функций, используем обычное правило произведения
+        derivative = (char *)malloc(strlen(outer->derivative) + strlen(inner->function) + strlen(inner->derivative) + 10);
+        sprintf(derivative, "(%s(%s) * %s)", outer->derivative, inner->function, inner->derivative);
+    }
 
     return new_expression(function, derivative);
 }
+
 
 void delete_expression(expression *expr) {
     free(expr->function);
@@ -164,7 +187,24 @@ void yyerror(const char *s) {
         fprintf(stderr, "Error: %s\n", s);
 }
 
-int main(void) {
-    yyparse();
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        // Если аргумент командной строки предоставлен, открываем файл
+        FILE *file = fopen(argv[1], "r");
+        if (!file) {
+            perror(argv[1]); // Выводим ошибку, если файл не может быть открыт
+            return 1;
+        }
+        yyin = file; // Устанавливаем yyin на файл для считывания
+    } else {
+        yyin = stdin; // В противном случае считываем из стандартного ввода
+    }
+
+    yyparse(); // Вызываем парсер
+
+    if (argc > 1) {
+        fclose(yyin); // Закрываем файл, если он был открыт
+    }
+
     return 0;
 }
